@@ -6,7 +6,7 @@ Setup:
 
 ```bash
 cp .env.example .env      # once
-npm run db:up             # start Postgres/PostGIS
+npm run docker:up         # start Postgres/PostGIS
 npm run migrate           # create the tables
 npm run dev               # API on http://localhost:8080
 ```
@@ -167,3 +167,42 @@ Unknown id (`/reports/00000000-0000-0000-0000-000000000000/votes`) gives `404`.
 Returns the active reports, newest update first, with `longitude`/`latitude` as numbers.
 An archived report is no longer listed, and a new submission at its spot creates a fresh
 report.
+
+Example response after steps 1 to 3:
+
+```json
+[
+  {
+    "id": "859eea74-f9ab-4fd8-8b92-24ac1c31b3ed",
+    "country": "NL",
+    "type": 3,
+    "status": "active",
+    "longitude": 4.873591,
+    "latitude": 52.338412,
+    "bearing1": 112,
+    "bearing2": null,
+    "road": "A10",
+    "hmp": 17.4,
+    "max_speed": null,
+    "first_spotted": "2026-09-26T15:39:37.463Z",
+    "last_update": "2026-09-26T15:39:52.108Z",
+    "user_count": 2
+  },
+  {
+    "id": "d4f3ce3b-8aa3-43c5-b0c8-205d9b5d126f",
+    "country": "NL",
+    "type": 0,
+    "status": "active",
+    "longitude": 5.481657,
+    "latitude": 51.442833,
+    "bearing1": 47,
+    "bearing2": 227,
+    "road": "A2",
+    "hmp": 161.8,
+    "max_speed": 100,
+    "first_spotted": "2026-09-26T15:39:37.264Z",
+    "last_update": "2026-09-26T15:39:37.288Z",
+    "user_count": 2
+  }
+]
+```
