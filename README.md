@@ -34,6 +34,11 @@ See `HTTP_EXAMPLES.md` for example http requests.
 - Postgres makes the de-duplication easier because it can handle lat/lon
 - The database can be updated by other applications (for example an CMS) to let admins manually add/edit reports
 
+## Merging reports based on type, distance and country
+- if a report of the same type and country is created within 200 meters of the original report no second report is created
+  - The `user_count` of the report is increased (same as someone pressing seen through the app)
+  - And if the "duplicate" report is created from the other driving direction it sets `bearing2` on the existing report
+
 # Out of scope
 - A background service that checks when a report was last confirmed and removes it when it has become stale
 - A background service that generates the snapshot.json based on the postgres contents
