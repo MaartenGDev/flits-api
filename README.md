@@ -1,0 +1,49 @@
+# Flits API
+NodeJS API that accepts user reports and voting.
+
+## Prerequisites
+- Docker runtime (like Docker desktop)
+  - **or** a local postgres instance with postgis extension
+## Setup
+1. Copy `.env.example` to `.env`
+2. Run `npm i`
+3. Run `npm run migrate` (to setup the postgres database)
+4. Run `npm run docker:up` (or run `npm run dev` with local postgres instance)
+
+## Testing
+See `HTTP_EXAMPLES.md` for example http requests.
+
+# Decisions
+## Postgres (postgis) as database
+- Chosen because of the geo support (distance calculations based on lat-lon)
+- Native scaling support with replication
+- ACID compliant
+
+## Using lat / lon instead of geohash
+- Lat/lon enables "give me everything in 20 meters", with geohash (5km box) we might miss a report that is just outside the box 
+
+## Postgres + snapshot.json
+- Postgres database to store current and historical data (with relations)
+- `snapshot.json` containing all active reports
+  - static asset that can be served to many concurrent clients
+    - to be served to the app through CDN / S3
+  - generated periodically based on postgres content
+
+### Postgres instead of just snapshot.json
+- Postgres instead of just snapshot.json
+  - Postgres makes the de-duplication easier because it can handle lat/lon
+  - The database can be updated by other applications (for example an CMS) to let admins manually add/edit reports
+
+# Out of scope
+- A background service that checks when a report was last confirmed and removes it when it has become stale
+- A background service that generates the snapshot.json based on the postgres contents
+
+# Assumptions
+## Reports
+- At a given moment there are around 400 active reports, peak will be 2000 active reports
+- Because of the background cleanup service the userReports table will stay limited in size
+- There are reports that are kept for many days because for ongoing maintenance
+
+# Future improvements
+- use an ORM for accessing the postgres database
+- write snapshot.json to S3

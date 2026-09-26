@@ -1,0 +1,22 @@
+services:
+  db:
+    # arm64-capable build of the official PostGIS image (postgis/postgis is amd64-only).
+    # On an amd64 host, or under emulation, `postgis/postgis:17-3.5` works as well.
+    image: imresamu/postgis:17-3.5
+    environment:
+      POSTGRES_USER: flits
+      POSTGRES_PASSWORD: flits
+      POSTGRES_DB: flits
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flits -d flits"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  pgdata:
+    name: flits-api-postgis
