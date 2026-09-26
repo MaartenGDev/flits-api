@@ -8,7 +8,7 @@ import {
     insertUserReport,
     type ReportRow,
 } from "@/repositories/reportRepository";
-import { MERGE_RADIUS_M, deduplicationService } from "@/services/deduplicationService";
+import { deduplicationService } from "@/services/deduplicationService";
 
 export type AddReportOutcome = "created" | "confirmed";
 
@@ -32,7 +32,7 @@ export class UserReportService {
                 type: sub.type,
                 lon: sub.lon,
                 lat: sub.lat,
-                radiusM: MERGE_RADIUS_M,
+                radiusM: deduplicationService.mergeRadiusM,
             });
 
             let existingReport: ReportRow | null = null;

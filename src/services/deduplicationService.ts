@@ -1,41 +1,6 @@
 import type { Report } from "@/models/report";
 import { ReportType } from "@/models/reportType";
-
-// ---- Rules -------------------------------------------------------------------------
-
-export const MERGE_RADIUS_M = 200;
-
-/** Report types where a report from the opposite carriageway is merged as `bearing2`. */
-export const TWO_SIDED_TYPES: ReadonlySet<ReportType> = new Set([
-    ReportType.SPEED_TRAP,
-    ReportType.SPEED_CAM,
-    ReportType.TRAFFIC_CAM,
-    ReportType.CONTROL,
-]);
-
-export const SAME_DIR_MAX_DEG = 45;
-export const OPPOSITE_MIN_DEG = 135;
-
-export const ARCHIVE_AFTER_NEGATIVE_VOTES = 2;
-
-// ---- Geo helpers ------------------------------------------------------------------
-
-/** Snaps a coordinate to 6 decimals (~0.1 m); the client sends float32 anyway. */
-export function snap6(value: number): number {
-    return Math.round(value * 1e6) / 1e6;
-}
-
-/** Normalises a bearing to an integer in [0, 360). */
-export function normaliseBearing(bearing: number): number {
-    return ((Math.round(bearing) % 360) + 360) % 360;
-}
-
-/** Smallest angle between two bearings, in [0, 180]. */
-export function angleDiff(a: number, b: number): number {
-    return Math.abs(((a - b + 540) % 360) - 180);
-}
-
-// ---- Matching ----------------------------------------------------------------------
+import { angleDiff, normaliseBearing, snap6 } from "@/utils/geo";
 
 export interface Submission {
     country: string;
@@ -64,8 +29,20 @@ export type MatchResult =
     | { isMatch: false; reason: "distance" | "direction" };
 
 export class DeduplicationService {
+    public readonly mergeRadiusM = 200;
+
+    private readonly sameDirectionMaxDeg = 45;
+    private readonly oppositeMinDeg = 135;
+
+    private readonly twoSidedTypes: ReadonlySet<ReportType> = new Set([
+        ReportType.SPEED_TRAP,
+        ReportType.SPEED_CAM,
+        ReportType.TRAFFIC_CAM,
+        ReportType.CONTROL,
+    ]);
+
     public isTwoSided(type: ReportType): boolean {
-        return TWO_SIDED_TYPES.has(type);
+        return this.twoSidedTypes.has(type);
     }
 
     public normaliseSubmission(report: Report): Submission {
@@ -88,18 +65,18 @@ export class DeduplicationService {
      * Decides whether a submission is the same real-world event as an existing report.
      */
     public compareSubmissionWithExistingReport(sub: Submission, candidate: Candidate): MatchResult {
-        if (candidate.distanceM > MERGE_RADIUS_M) {
+        if (candidate.distanceM > this.mergeRadiusM) {
             return { isMatch: false, reason: "distance" };
         }
 
         const firstBearingAngleDifference = angleDiff(sub.bearing1, candidate.bearing1);
         const secondBearingAngleDifference = candidate.bearing2 === null ? null : angleDiff(sub.bearing1, candidate.bearing2);
 
-        if (firstBearingAngleDifference <= SAME_DIR_MAX_DEG || (secondBearingAngleDifference !== null && secondBearingAngleDifference <= SAME_DIR_MAX_DEG)) {
+        if (firstBearingAngleDifference <= this.sameDirectionMaxDeg || (secondBearingAngleDifference !== null && secondBearingAngleDifference <= this.sameDirectionMaxDeg)) {
             return { isMatch: true, kind: "already_reported" };
         }
 
-        if (this.isTwoSided(sub.type) && candidate.bearing2 === null && firstBearingAngleDifference >= OPPOSITE_MIN_DEG) {
+        if (this.isTwoSided(sub.type) && candidate.bearing2 === null && firstBearingAngleDifference >= this.oppositeMinDeg) {
             return { isMatch: true, kind: "also_on_other_side", bearing2: sub.bearing1 };
         }
 

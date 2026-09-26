@@ -8,7 +8,7 @@ import {
     insertVote,
     type ReportRow,
 } from "@/repositories/reportRepository";
-import {ARCHIVE_AFTER_NEGATIVE_VOTES, snap6} from "@/services/deduplicationService";
+import { snap6 } from "@/utils/geo";
 
 export type VoteOutcome = "confirmed" | "archived" | "recorded";
 
@@ -18,6 +18,8 @@ export interface VoteResult {
 }
 
 export class ReportVoteService {
+    private readonly archiveAfterNegativeVotes = 2;
+
     public async vote(reportId: string, vote: ReportVote): Promise<VoteResult | null> {
         return withTransaction(async (client) => {
             let report = await getReport(client, reportId);
@@ -54,7 +56,7 @@ export class ReportVoteService {
 
             const negativeVoteCount = await countNegativeVotes(client, report.id);
 
-            if (negativeVoteCount < ARCHIVE_AFTER_NEGATIVE_VOTES) {
+            if (negativeVoteCount < this.archiveAfterNegativeVotes) {
                 return {outcome: "recorded", report};
             }
 
