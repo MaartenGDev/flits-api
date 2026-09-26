@@ -30,9 +30,8 @@ See `HTTP_EXAMPLES.md` for example http requests.
   - generated periodically based on postgres content
 
 ### Postgres instead of just snapshot.json
-- Postgres instead of just snapshot.json
-  - Postgres makes the de-duplication easier because it can handle lat/lon
-  - The database can be updated by other applications (for example an CMS) to let admins manually add/edit reports
+- Postgres makes the de-duplication easier because it can handle lat/lon
+- The database can be updated by other applications (for example an CMS) to let admins manually add/edit reports
 
 # Out of scope
 - A background service that checks when a report was last confirmed and removes it when it has become stale
