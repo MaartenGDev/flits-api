@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "docker:up": "docker compose up -d --wait",
     "docker:down": "docker compose down",
-    "migrate": "node-pg-migrate up",
-    "migrate:down": "node-pg-migrate down"
+    "migrate": "node-pg-migrate up --migrations-dir src/migrations",
+    "migrate:down": "node-pg-migrate down --migrations-dir src/migrations"
   },
   "keywords": [],
   "author": "",
