@@ -8,11 +8,7 @@ import {
     insertUserReport,
     type ReportRow,
 } from "@/repositories/reportRepository";
-import {
-    MERGE_RADIUS_M,
-    compareSubmissionWithExistingReport,
-    normaliseSubmission,
-} from "@/services/deduplicationService";
+import { MERGE_RADIUS_M, deduplicationService } from "@/services/deduplicationService";
 
 export type AddReportOutcome = "created" | "confirmed";
 
@@ -27,7 +23,7 @@ export class UserReportService {
      * type and direction, or creates a new report.
      */
     public async addReport(userReport: UserReport): Promise<AddReportResult> {
-        const sub = normaliseSubmission(userReport.report);
+        const sub = deduplicationService.normaliseSubmission(userReport.report);
         const user = userReport.user;
 
         return withTransaction(async (client) => {
@@ -43,7 +39,7 @@ export class UserReportService {
             let matchKind: string | null = null;
 
             for (const candidate of candidates) {
-                const matchResult = compareSubmissionWithExistingReport(sub, {
+                const matchResult = deduplicationService.compareSubmissionWithExistingReport(sub, {
                     id: candidate.id,
                     bearing1: candidate.bearing1,
                     bearing2: candidate.bearing2,
