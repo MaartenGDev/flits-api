@@ -36,7 +36,7 @@ See `HTTP_EXAMPLES.md` for example http requests.
 
 ## Merging reports based on type, distance and country
 - if a report of the same type and country is created within 200 meters of the original report no second report is created
-  - The `user_count` of the report is increased (same as someone pressing seen through the app)
+  - The `user_count` of the existing report is increased (same as someone pressing seen through the app)
   - And if the "duplicate" report is created from the other driving direction it sets `bearing2` on the existing report
 
 # Out of scope
