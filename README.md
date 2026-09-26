@@ -44,5 +44,6 @@ See `HTTP_EXAMPLES.md` for example http requests.
 - There are reports that are kept for many days because for ongoing maintenance
 
 # Future improvements
+- add json error handler for 400/500 errors returned from the api
 - use an ORM for accessing the postgres database
 - write snapshot.json to S3
