@@ -24,6 +24,7 @@ See `HTTP_EXAMPLES.md` for example http requests.
 
 ## Postgres + snapshot.json
 - Postgres database to store current and historical data (with relations)
+- Sending all traffic to `/reports` and thus Postgres would require complicated (and expensive) scaling. Serving a static (cacheable) file solves this.
 - `snapshot.json` containing all active reports
   - static asset that can be served to many concurrent clients
     - to be served to the app through CDN / S3
