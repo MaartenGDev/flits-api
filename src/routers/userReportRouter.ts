@@ -1,8 +1,13 @@
-import express, {Router} from "express";
-import {userReportController} from "@/controllers/userReportController";
+import express, { type Router } from "express";
 
-export const userReportRouter: Router = express.Router();
+import type { UserReportController } from "../controllers/userReportController";
 
-userReportRouter.post("/", userReportController.create)
-userReportRouter.get("/", userReportController.index)
-userReportRouter.post("/:id/votes", userReportController.vote)
+export function createUserReportRouter(controller: UserReportController): Router {
+    const router = express.Router();
+
+    router.post("/", controller.create);
+    router.get("/", controller.index);
+    router.post("/:id/votes", controller.vote);
+
+    return router;
+}

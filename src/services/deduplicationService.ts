@@ -1,6 +1,6 @@
-import type { Report } from "@/models/report";
-import { ReportType } from "@/models/reportType";
-import { angleDiff, normaliseBearing, snap6 } from "@/utils/geo";
+import type { Report } from "../models/report";
+import { ReportType } from "../models/reportType";
+import { angleDiff, normaliseBearing, snap6 } from "../utils/geo";
 
 export interface Submission {
     country: string;
@@ -83,5 +83,3 @@ export class DeduplicationService {
         return { isMatch: false, reason: "direction" };
     }
 }
-
-export const deduplicationService = new DeduplicationService();

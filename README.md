@@ -11,7 +11,10 @@ NodeJS API that accepts user reports and voting.
 4. Run `npm run docker:up` (or run `npm run dev` with local postgres instance)
 
 ## Testing
-See `HTTP_EXAMPLES.md` for example http requests.
+- `npm test` runs the unit tests (Vitest). They need neither Docker nor a `.env` file.
+- `npm run test:watch` re-runs them on change.
+- Tests live in `tests/` and mirror the `src/` layout; shared builders and fakes are in `tests/support/`.
+- See `HTTP_EXAMPLES.md` for manual http requests against a running instance.
 
 # Decisions
 ## Postgres (postgis) as database
@@ -51,5 +54,6 @@ See `HTTP_EXAMPLES.md` for example http requests.
 
 # Future improvements
 - add json error handler for 400/500 errors returned from the api
+- integration tests against a real PostGIS (testcontainers) for the repository and the http layer
 - use an ORM for accessing the postgres database
 - write snapshot.json to S3

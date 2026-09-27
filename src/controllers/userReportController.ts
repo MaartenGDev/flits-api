@@ -1,15 +1,19 @@
 import type { Request, RequestHandler, Response } from "express";
-import { pool } from "@/db/pool";
-import { ReportVoteSchema } from "@/models/reportVote";
-import { UserReportSchema } from "@/models/userReport";
-import { listActiveReports } from "@/repositories/reportRepository";
-import { reportVoteService } from "@/services/reportVoteService";
-import { userReportService } from "@/services/userReportService";
 
-class UserReportController {
+import { ReportVoteSchema } from "../models/reportVote";
+import { UserReportSchema } from "../models/userReport";
+import type { ReportVoteService } from "../services/reportVoteService";
+import type { UserReportService } from "../services/userReportService";
+
+export class UserReportController {
+    constructor(
+        private readonly userReportService: UserReportService,
+        private readonly reportVoteService: ReportVoteService,
+    ) {}
+
     public index: RequestHandler = async (req: Request, res: Response) => {
         const country = typeof req.query.country === "string" ? req.query.country.toUpperCase() : undefined;
-        const reports = await listActiveReports(pool, { country });
+        const reports = await this.userReportService.listActiveReports({ country });
 
         res.json(reports);
     };
@@ -21,7 +25,7 @@ class UserReportController {
             return;
         }
 
-        const result = await userReportService.addReport(parsed.data);
+        const result = await this.userReportService.addReport(parsed.data);
         res.status(result.outcome === "created" ? 201 : 200).send(result);
     };
 
@@ -32,7 +36,7 @@ class UserReportController {
             return;
         }
 
-        const result = await reportVoteService.vote(req.params.id as string, parsed.data);
+        const result = await this.reportVoteService.vote(req.params.id as string, parsed.data);
         if (result === null) {
             res.status(404).send({ message: "Report not found" });
             return;
@@ -41,5 +45,3 @@ class UserReportController {
         res.status(200).send(result);
     };
 }
-
-export const userReportController = new UserReportController();

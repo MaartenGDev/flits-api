@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { GpsPointSchema } from "@/models/user";
+import { GpsPointSchema } from "./user";
 
 export type ReportVote = z.infer<typeof ReportVoteSchema>;
 export const ReportVoteSchema = z.object({

@@ -1,14 +1,9 @@
-import { withTransaction } from "@/db/pool";
-import { logger } from "@/middleware/logger";
-import type { UserReport } from "@/models/userReport";
-import {
-    confirmReport,
-    findActiveCandidates,
-    insertReport,
-    insertUserReport,
-    type ReportRow,
-} from "@/repositories/reportRepository";
-import { deduplicationService } from "@/services/deduplicationService";
+import type { Logger } from "pino";
+
+import type { Db } from "../db/database";
+import type { UserReport } from "../models/userReport";
+import type { ReportRepository, ReportRow } from "../repositories/reportRepository";
+import type { DeduplicationService } from "./deduplicationService";
 
 export type AddReportOutcome = "created" | "confirmed";
 
@@ -18,28 +13,39 @@ export interface AddReportResult {
 }
 
 export class UserReportService {
+    constructor(
+        private readonly db: Db,
+        private readonly reports: ReportRepository,
+        private readonly deduplication: DeduplicationService,
+        private readonly logger: Logger,
+    ) {}
+
+    public listActiveReports(p: { country?: string } = {}): Promise<ReportRow[]> {
+        return this.reports.listActiveReports(this.db, p);
+    }
+
     /**
      * Stores a submission and either folds it into a nearby active report of the same
      * type and direction, or creates a new report.
      */
     public async addReport(userReport: UserReport): Promise<AddReportResult> {
-        const sub = deduplicationService.normaliseSubmission(userReport.report);
+        const sub = this.deduplication.normaliseSubmission(userReport.report);
         const user = userReport.user;
 
-        return withTransaction(async (client) => {
-            const candidates = await findActiveCandidates(client, {
+        return this.db.withTransaction(async (client) => {
+            const candidates = await this.reports.findActiveCandidates(client, {
                 country: sub.country,
                 type: sub.type,
                 lon: sub.lon,
                 lat: sub.lat,
-                radiusM: deduplicationService.mergeRadiusM,
+                radiusM: this.deduplication.mergeRadiusM,
             });
 
             let existingReport: ReportRow | null = null;
             let matchKind: string | null = null;
 
             for (const candidate of candidates) {
-                const matchResult = deduplicationService.compareSubmissionWithExistingReport(sub, {
+                const matchResult = this.deduplication.compareSubmissionWithExistingReport(sub, {
                     id: candidate.id,
                     bearing1: candidate.bearing1,
                     bearing2: candidate.bearing2,
@@ -51,8 +57,8 @@ export class UserReportService {
                 }
 
                 existingReport = matchResult.kind === "also_on_other_side"
-                    ? await confirmReport(client, candidate.id, { bearing2: matchResult.bearing2 })
-                    : await confirmReport(client, candidate.id);
+                    ? await this.reports.confirmReport(client, candidate.id, { bearing2: matchResult.bearing2 })
+                    : await this.reports.confirmReport(client, candidate.id);
 
                 if (existingReport !== null) {
                     matchKind = matchResult.kind;
@@ -62,11 +68,11 @@ export class UserReportService {
 
             const outcome: AddReportOutcome = existingReport === null ? "created" : "confirmed";
 
-            if(existingReport == null) {
-                existingReport = await insertReport(client, sub);
+            if (existingReport === null) {
+                existingReport = await this.reports.insertReport(client, sub);
             }
 
-            await insertUserReport(client, {
+            await this.reports.insertUserReport(client, {
                 ...sub,
                 reportId: existingReport.id,
                 uid: user.uid,
@@ -78,7 +84,7 @@ export class UserReportService {
                 outcome,
             });
 
-            logger.info(
+            this.logger.info(
                 {
                     outcome,
                     reportId: existingReport.id,
@@ -94,5 +100,3 @@ export class UserReportService {
         });
     }
 }
-
-export const userReportService = new UserReportService();

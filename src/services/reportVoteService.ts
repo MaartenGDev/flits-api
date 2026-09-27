@@ -1,14 +1,7 @@
-import {withTransaction} from "@/db/pool";
-import type {ReportVote} from "@/models/reportVote";
-import {
-    archiveReport,
-    confirmReport,
-    countNegativeVotes,
-    getReport,
-    insertVote,
-    type ReportRow,
-} from "@/repositories/reportRepository";
-import { snap6 } from "@/utils/geo";
+import type { Db } from "../db/database";
+import type { ReportVote } from "../models/reportVote";
+import type { ReportRepository, ReportRow } from "../repositories/reportRepository";
+import { snap6 } from "../utils/geo";
 
 export type VoteOutcome = "confirmed" | "archived" | "recorded";
 
@@ -20,18 +13,23 @@ export interface VoteResult {
 export class ReportVoteService {
     private readonly archiveAfterNegativeVotes = 2;
 
+    constructor(
+        private readonly db: Db,
+        private readonly reports: ReportRepository,
+    ) {}
+
     public async vote(reportId: string, vote: ReportVote): Promise<VoteResult | null> {
-        return withTransaction(async (client) => {
-            let report = await getReport(client, reportId);
+        return this.db.withTransaction(async (client) => {
+            const report = await this.reports.getReport(client, reportId);
             if (report === null) {
                 return null;
             }
 
-            await insertVote(client, {
+            await this.reports.insertVote(client, {
                 reportId: report.id,
                 uid: vote.user.uid,
                 userid: vote.user.userid ?? null,
-                seen: vote.report.seen ?? null,
+                seen: vote.report.seen,
                 automatic: vote.report.automatic,
                 source: vote.report.type,
                 lon: snap6(vote.user.longitude),
@@ -42,32 +40,30 @@ export class ReportVoteService {
             });
 
             if (report.status !== "active") {
-                return {outcome: "recorded", report};
+                return { outcome: "recorded", report };
             }
 
             if (vote.report.seen) {
-                const confirmedReport = await confirmReport(client, report.id);
+                const confirmedReport = await this.reports.confirmReport(client, report.id);
 
                 return {
                     outcome: confirmedReport ? "confirmed" : "recorded",
-                    report: confirmedReport ?? report
-                }
+                    report: confirmedReport ?? report,
+                };
             }
 
-            const negativeVoteCount = await countNegativeVotes(client, report.id);
+            const negativeVoteCount = await this.reports.countNegativeVotes(client, report.id);
 
             if (negativeVoteCount < this.archiveAfterNegativeVotes) {
-                return {outcome: "recorded", report};
+                return { outcome: "recorded", report };
             }
 
-            const archivedReport = await archiveReport(client, report.id);
+            const archivedReport = await this.reports.archiveReport(client, report.id);
 
             return {
                 outcome: archivedReport ? "archived" : "recorded",
-                report: archivedReport ?? report
-            }
+                report: archivedReport ?? report,
+            };
         });
     }
 }
-
-export const reportVoteService = new ReportVoteService();

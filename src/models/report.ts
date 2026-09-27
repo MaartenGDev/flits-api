@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { ReportType } from "@/models/reportType";
+import { ReportType } from "./reportType";
 
 export type Report = z.infer<typeof ReportSchema>;
 export const ReportSchema = z.object({
